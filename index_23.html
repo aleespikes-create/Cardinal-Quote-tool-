@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Painter's Quote">
+<title>Painter's Quote</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@500;600&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one-handed phone tool. Header, job summary, room cards, sticky price bar. Painter's-tape blue is the single accent. */
+:root{
+  --bg:#F2F5F9; --surface:#FFFFFF; --ink:#14202E; --muted:#586677; --line:#D8DFE8;
+  --tape:#1F5FD6; --tape-ink:#FFFFFF; --soft:#E7EEFA;
+  --good:#1B7F47; --warn:#A8690F; --bad:#BC3A2C;
+  --good-bg:#E3F3EA; --warn-bg:#FBEFD9; --bad-bg:#FADFDB;
+  --f-display:'Archivo','Helvetica Neue',Arial,sans-serif;
+  --f-body:'Public Sans','Helvetica Neue',Arial,sans-serif;
+  --f-num:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E141C; --surface:#172029; --ink:#E8EDF3; --muted:#93A0B0; --line:#283442;
+  --tape:#6EA0FF; --tape-ink:#0A1220; --soft:#1A2943;
+  --good:#52CC8B; --warn:#E3B45F; --bad:#F28B7C;
+  --good-bg:#16301F; --warn-bg:#35280F; --bad-bg:#3A1A16; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E141C; --surface:#172029; --ink:#E8EDF3; --muted:#93A0B0; --line:#283442;
+  --tape:#6EA0FF; --tape-ink:#0A1220; --soft:#1A2943;
+  --good:#52CC8B; --warn:#E3B45F; --bad:#F28B7C;
+  --good-bg:#16301F; --warn-bg:#35280F; --bad-bg:#3A1A16; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-block:0 120px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px;min-width:0}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--tape);outline-offset:2px}
+.top{display:flex;align-items:center;gap:10px;padding-top:14px}
+.top h1{font-size:22px;font-weight:800;letter-spacing:-.01em;flex:1}
+.ico{min-width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:600}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--soft);border-radius:12px;padding:4px;gap:4px}
+.tabs button{border:0;background:transparent;border-radius:9px;height:42px;font-weight:600;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h2{font-size:16px;font-weight:700}
+.lbl{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+input[type=text],input[type=number],textarea{width:100%;height:48px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);
+  padding:0 12px;font:500 17px var(--f-num)}
+input[type=text].t,textarea{font-family:var(--f-body);font-weight:500}
+textarea{height:auto;padding:10px 12px;font-size:14px;line-height:1.4}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:999px;height:40px;padding:0 14px;font-weight:600;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--tape);color:var(--tape-ink);border-color:var(--tape)}
+.chip.auto{border-style:dashed;color:var(--muted)}
+.chip.auto.on{background:var(--soft);color:var(--ink);border-color:var(--tape)}
+.btn{height:48px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-weight:600;padding:0 16px}
+.btn.pri{background:var(--tape);color:var(--tape-ink);border-color:var(--tape)}
+.btn.danger{color:var(--bad)}
+.btn.armed{background:var(--bad);color:#fff;border-color:var(--bad)}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.sum{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sum .k{display:flex;flex-direction:column;gap:2px}
+.sum .k b{font:600 20px var(--f-num)}
+.sum .big b{font-size:28px;font-family:var(--f-display);font-weight:800}
+.pill{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:999px;font:600 13px var(--f-num)}
+.pill.good{background:var(--good-bg);color:var(--good)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.note{font-size:13px;color:var(--muted)}
+.tag{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--soft);color:var(--tape);border-radius:6px;padding:2px 6px}
+.roomhead{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;padding:0;text-align:left;min-height:44px}
+.roomhead .nm{font:700 17px var(--f-display);display:block}
+.roomhead .sub{font-size:13px;color:var(--muted)}
+.roomhead .pr{margin-left:auto;font:600 18px var(--f-num)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:13px;color:var(--muted)}
+.stats b{color:var(--ink);font-family:var(--f-num);font-weight:600}
+.list{display:flex;flex-direction:column;gap:10px}
+.jobrow{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;min-height:64px}
+.jobrow .pr{margin-left:auto;font:600 18px var(--f-num)}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);
+  padding:10px max(16px,env(safe-area-inset-left,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bar[hidden]{display:none}
+.bar .in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.bar .tot{font:800 26px var(--f-display);line-height:1}
+.bar .meta{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
+.bar .pill{margin-left:auto}
+.quote{border:1px solid var(--line);border-radius:12px;padding:16px;background:#fff;color:#111;display:flex;flex-direction:column;gap:10px}
+.quote h3{font-size:20px}
+.quote .ln{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed #cfd5dd;padding-bottom:6px}
+.quote .ln span:first-child{min-width:0}
+.quote .tl{display:flex;justify-content:space-between;font:800 20px var(--f-display)}
+.quote small{color:#555}
+.xbtn{min-width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--muted);font-size:20px}
+.xrow{display:grid;grid-template-columns:1fr 110px 44px;gap:8px;align-items:end}
+@media (prefers-reduced-motion:no-preference){.chip,.btn,.tabs button{transition:background .12s,color .12s}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top" id="top"></header>
+  <main id="app" class="wrap" style="gap:14px"></main>
+</div>
+<div class="bar" id="bar" hidden></div>
+
+<script>
+//ENGINE-START
+const DEFAULTS = {
+  target:50, floor:45,
+  wall:0.55, ceil:0.55, trim:0.60,
+  doorSq:20, winSq:15, doorW:3,
+  s1:100, m1:1.50, s2:150, m2:1.42, s3:250, m3:1.18, s4:350, m4:1.00,
+  ver:2,
+  hiCeilH:10, cHi:15, hiCeil2H:14, cHi2:30, cVault:10, cPrep:20, cColor:10, cFurn:5,
+  jobSmallMax:300, jobSmallM:1.10, jobMidMax:2500, jobMidM:1.00, jobLargeM:0.95,
+  minJob:600, overhead:0, round:5,
+  biz:'', bizPhone:'', terms:'Quote valid for 30 days. Includes two coats of paint, surface prep, and cleanup. Furniture moving and major wall repair are not included unless listed.'
+};
+const num = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+function sizeMult(f, st){
+  const p = [[st.s1, st.m1], [st.s2, st.m2], [st.s3, st.m3], [st.s4, st.m4]];
+  if (f <= p[0][0]) return p[0][1];
+  for (let i = 0; i < 3; i++) {
+    if (f <= p[i + 1][0]) { const t = (f - p[i][0]) / (p[i + 1][0] - p[i][0]); return p[i][1] + t * (p[i + 1][1] - p[i][1]); }
+  }
+  return p[3][1];
+}
+const roundTo = (x, n) => n > 0 ? Math.round(x / n) * n : x;
+function calc(job, st){
+  const m = Math.min(0.95, Math.max(0, num(st.target) / 100));
+  const rooms = job.rooms.map(r => {
+    const l = num(r.l), w = num(r.w), h = num(r.h);
+    const custom = r.shape === 'custom';
+    const floor = custom ? num(r.area) : l * w;
+    const per = custom ? num(r.perim) : 2 * (l + w);
+    const vault = !!r.vault;
+    const peak = vault ? Math.max(num(r.peak), h) : h;
+    const avgH = vault ? (h + peak) / 2 : h;
+    const span = custom ? Math.sqrt(floor) : Math.min(l, w);
+    const slope = vault && span > 0 ? Math.sqrt(1 + Math.pow((peak - h) / (span / 2), 2)) : 1;
+    const doors = Math.max(0, Math.round(num(r.doors))), wins = Math.max(0, Math.round(num(r.windows)));
+    const wallArea = r.walls ? Math.max(0, per * avgH - doors * st.doorSq - wins * st.winSq) : 0;
+    const ceilArea = r.ceiling ? floor * slope : 0;
+    const trimLF = r.trim ? Math.max(0, per - doors * st.doorW) : 0;
+    const S = sizeMult(floor, st);
+    const hiCeil = peak > st.hiCeilH;
+    let C = 0;
+    if (peak > st.hiCeil2H) C += st.cHi2; else if (hiCeil) C += st.cHi;
+    if (vault) C += st.cVault;
+    if (r.prep) C += st.cPrep;
+    if (r.color) C += st.cColor;
+    if (r.furn) C += st.cFurn;
+    const sub = wallArea * st.wall + ceilArea * st.ceil + trimLF * st.trim;
+    const base = sub * S * (1 + C / 100);
+    return {id:r.id, floor, wallArea, ceilArea, trimLF, S, C, hiCeil, sub, base};
+  });
+  const paintSq = rooms.reduce((a, x) => a + x.wallArea + x.ceilArea, 0);
+  const J = paintSq < st.jobSmallMax ? st.jobSmallM : paintSq < st.jobMidMax ? st.jobMidM : st.jobLargeM;
+  const sumBase = rooms.reduce((a, x) => a + x.base, 0);
+  rooms.forEach(x => {
+    x.cost = x.base * J + (sumBase > 0 ? st.overhead * x.base / sumBase : 0);
+    x.price = roundTo(x.cost / (1 - m), st.round);
+  });
+  const extras = job.extras.map(e => {
+    const cost = num(e.cost);
+    return {id:e.id, label:e.label, cost, price: roundTo(cost / (1 - m), st.round)};
+  });
+  const cost = rooms.reduce((a, x) => a + x.cost, 0) + extras.reduce((a, x) => a + x.cost, 0);
+  let engine = rooms.reduce((a, x) => a + x.price, 0) + extras.reduce((a, x) => a + x.price, 0);
+  let minApplied = false;
+  if (engine > 0 && engine < st.minJob) { engine = st.minJob; minApplied = true; }
+  const ov = num(job.override);
+  const price = ov > 0 ? ov : engine;
+  const margin = price > 0 ? (price - cost) / price : 0;
+  return {rooms, extras, paintSq, J, cost, engine, price, margin, minApplied, overridden: ov > 0};
+}
+//ENGINE-END
+
+const KEY = 'painters-quote.v1';
+const uid = () => Math.random().toString(36).slice(2, 9);
+const newRoom = (o={}) => Object.assign({id:uid(), name:'Room', shape:'rect', l:'', w:'', perim:'', area:'', h:'8', vault:false, peak:'', walls:true, ceiling:true, trim:true, doors:'1', windows:'1', prep:false, color:false, furn:false}, o);
+const newJob = (o={}) => Object.assign({id:uid(), customer:'', address:'', phone:'', created:Date.now(), rooms:[], extras:[], override:'', totalOnly:false, example:false}, o);
+function seed(){
+  const j = newJob({customer:'Example: 20 x 21 living room', address:'Sample job, delete when ready', example:true,
+    rooms:[newRoom({name:'Living Room', l:'20', w:'21', h:'8', doors:'2', windows:'2'})]});
+  return {settings:Object.assign({}, DEFAULTS), jobs:[j], currentId:null};
+}
+let S;
+try { S = JSON.parse(localStorage.getItem(KEY)); } catch(e) { S = null; }
+if (!S || !S.jobs) S = seed();
+if (S.settings && S.settings.ver !== 2) { S.settings.jobSmallMax = DEFAULTS.jobSmallMax; }
+S.settings = Object.assign({}, DEFAULTS, S.settings, {ver:2});
+let view = 'jobs', tab = 'rooms', openRoom = null, armed = null, copyMsg = '', fallbackText = '';
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} };
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const money = n => '$' + Math.round(n).toLocaleString('en-US');
+const pct = n => (n * 100).toFixed(1) + '%';
+const job = () => S.jobs.find(j => j.id === S.currentId);
+const room = id => job().rooms.find(r => r.id === id);
+function status(margin){
+  const t = S.settings.target / 100, f = S.settings.floor / 100;
+  return margin >= t - 0.005 ? 'good' : margin >= f ? 'warn' : 'bad';
+}
+const scopeText = r => ['walls','ceiling','trim'].filter(k => r[k]).join(', ') || 'no scope';
+
+function field(label, attrs, v, extra=''){
+  return `<label class="field"><span class="lbl">${label}</span><input type="number" inputmode="decimal" step="any" ${attrs} value="${esc(v)}" ${extra}></label>`;
+}
+function setField(label, k, unit){
+  return `<label class="field"><span class="lbl">${label}${unit ? ' (' + unit + ')' : ''}</span><input type="number" inputmode="decimal" step="any" data-set="${k}" value="${esc(S.settings[k])}"></label>`;
+}
+
+function topView(){
+  if (view === 'jobs') return `<h1>Painter's Quote</h1><button class="ico" data-act="settings" aria-label="Settings">Rates</button>`;
+  if (view === 'settings') return `<button class="ico" data-act="back" aria-label="Back">&larr;</button><h1>Rates and margin</h1>`;
+  const j = job();
+  return `<button class="ico" data-act="back" aria-label="Back to jobs">&larr;</button><h1>${esc(j.customer || 'New job')}</h1><button class="ico" data-act="settings" aria-label="Rates">Rates</button>`;
+}
+
+function jobsView(){
+  const rows = S.jobs.map(j => {
+    const c = calc(j, S.settings);
+    return `<button class="jobrow" data-act="open" data-id="${j.id}"><span><b>${esc(j.customer || 'Untitled job')}</b> ${j.example ? '<span class="tag">Example</span>' : ''}<br><span class="note">${j.rooms.length} room${j.rooms.length === 1 ? '' : 's'} &middot; ${esc(j.address || 'No address')}</span></span><span class="pr">${money(c.price)}</span></button>`;
+  }).join('');
+  return `<div class="list">${rows || '<p class="note">No jobs yet.</p>'}</div>
+    <button class="btn pri" data-act="newJob">New job</button>
+    <p class="note">Jobs and rates are saved on this device only. Clearing browser data erases them.</p>`;
+}
+
+function roomCard(r){
+  const open = openRoom === r.id, custom = r.shape === 'custom';
+  const head = `<button class="roomhead" data-act="toggleRoom" data-id="${r.id}" aria-expanded="${open}">
+      <span><span class="nm">${esc(r.name || 'Room')}</span><span class="sub" data-out="room-dims:${r.id}"></span></span>
+      <span class="pr" data-out="room-price:${r.id}"></span></button>`;
+  if (!open) return `<section class="card">${head}</section>`;
+  const chip = (f, label) => `<button class="chip" data-act="flag" data-id="${r.id}" data-f="${f}" aria-pressed="${!!r[f]}">${label}</button>`;
+  return `<section class="card">${head}
+    <label class="field"><span class="lbl">Room name</span><input type="text" class="t" data-room="${r.id}" data-f="name" value="${esc(r.name)}"></label>
+    <div class="field"><span class="lbl">Room shape</span><div class="chips">
+      <button class="chip" data-act="shape" data-id="${r.id}" data-v="rect" aria-pressed="${!custom}">Rectangle</button>
+      <button class="chip" data-act="shape" data-id="${r.id}" data-v="custom" aria-pressed="${custom}">Custom shape</button></div></div>
+    ${custom ? `<div class="row">
+      ${field('Total wall run (ft)', `data-room="${r.id}" data-f="perim"`, r.perim)}
+      ${field('Floor area (sq ft)', `data-room="${r.id}" data-f="area"`, r.area)}
+    </div><p class="note">L-shapes, alcoves and bump-outs: add up every wall as you walk the room. Split the floor into rectangles and add their areas.</p>` : `<div class="row">
+      ${field('Length (ft)', `data-room="${r.id}" data-f="l"`, r.l)}
+      ${field('Width (ft)', `data-room="${r.id}" data-f="w"`, r.w)}
+    </div>`}
+    <div class="row">
+      ${field(r.vault ? 'Low wall (ft)' : 'Ceiling height (ft)', `data-room="${r.id}" data-f="h"`, r.h)}
+      ${r.vault ? field('Peak height (ft)', `data-room="${r.id}" data-f="peak"`, r.peak) : ''}
+    </div>
+    <div class="field"><span class="lbl">What gets painted</span><div class="chips">${chip('walls','Walls')}${chip('ceiling','Ceiling')}${chip('trim','Trim')}</div></div>
+    <div class="row">
+      ${field('Doors', `data-room="${r.id}" data-f="doors" min="0"`, r.doors)}
+      ${field('Windows', `data-room="${r.id}" data-f="windows" min="0"`, r.windows)}
+    </div>
+    <div class="field"><span class="lbl">Complexity</span><div class="chips">
+      <span class="chip auto" data-out="room-hi:${r.id}">Over ${S.settings.hiCeilH} ft is automatic</span>
+      ${chip('vault','Vaulted ceiling')}${chip('prep','Heavy prep')}${chip('color','Dark to light')}${chip('furn','Furnished')}</div></div>
+    <div class="stats">
+      <span>Wall area <b data-out="room-wall:${r.id}"></b></span><span>Ceiling area <b data-out="room-ceil:${r.id}"></b></span>
+      <span>Trim <b data-out="room-trim:${r.id}"></b></span><span>Size multiplier <b data-out="room-s:${r.id}"></b></span>
+      <span>Complexity <b data-out="room-c:${r.id}"></b></span><span>Your cost <b data-out="room-cost:${r.id}"></b></span>
+    </div>
+    <div class="row"><button class="btn" data-act="dupRoom" data-id="${r.id}">Duplicate</button>
+      <button class="btn danger ${armed === 'r' + r.id ? 'armed' : ''}" data-act="delRoom" data-id="${r.id}">${armed === 'r' + r.id ? 'Tap again to remove' : 'Remove room'}</button></div>
+  </section>`;
+}
+
+function roomsTab(){
+  const j = job();
+  const extras = j.extras.map(e => `<div class="xrow">
+      <label class="field"><span class="lbl">Extra item</span><input type="text" class="t" data-extra="${e.id}" data-f="label" value="${esc(e.label)}" placeholder="Cabinets, stairs..."></label>
+      <label class="field"><span class="lbl">Sub cost ($)</span><input type="number" inputmode="decimal" step="any" data-extra="${e.id}" data-f="cost" value="${esc(e.cost)}"></label>
+      <button class="xbtn" data-act="delExtra" data-id="${e.id}" aria-label="Remove extra">&times;</button></div>`).join('');
+  return `<section class="card"><h2>Job summary</h2>
+      <div class="sum">
+        <div class="k big"><span class="lbl">Quote price</span><b data-out="sum-price"></b></div>
+        <div class="k"><span class="lbl">Your cost</span><b data-out="sum-cost"></b></div>
+        <div class="k"><span class="lbl">Margin</span><b data-out="sum-margin"></b></div>
+        <div class="k"><span class="lbl">Paintable area</span><b data-out="sum-paint"></b></div>
+      </div>
+      <p class="note" data-out="sum-note"></p>
+      ${field('Override price ($), optional', 'data-job="override"', j.override, 'placeholder="Use the calculated price"')}
+    </section>
+    ${j.rooms.map(roomCard).join('')}
+    <button class="btn pri" data-act="addRoom">Add room</button>
+    <section class="card"><h2>Extras</h2><p class="note">Flat-priced items. Enter what your sub charges and the app adds your margin.</p>
+      ${extras}<button class="btn" data-act="addExtra">Add extra</button></section>`;
+}
+
+function quoteLines(){
+  const j = job(), c = calc(j, S.settings), lines = [];
+  j.rooms.forEach((r, i) => { if (c.rooms[i].price > 0) lines.push([`${r.name || 'Room'}`, scopeText(r), c.rooms[i].price]); });
+  j.extras.forEach((e, i) => { if (c.extras[i].price > 0) lines.push([e.label || 'Extra', '', c.extras[i].price]); });
+  return {lines, total: c.price};
+}
+function quoteText(){
+  const j = job(), s = S.settings, q = quoteLines();
+  const out = [s.biz || 'Painting quote', s.bizPhone, '', 'Quote for ' + (j.customer || 'customer'), j.address, new Date().toLocaleDateString('en-US'), ''];
+  if (!j.totalOnly) q.lines.forEach(l => out.push(`${l[0]} (${l[1] || 'as discussed'}): ${money(l[2])}`));
+  out.push('', 'Total: ' + money(q.total), '', s.terms);
+  return out.filter(x => x !== undefined && x !== null).join('\n').replace(/\n{3,}/g, '\n\n');
+}
+function quoteTab(){
+  const j = job(), s = S.settings, q = quoteLines();
+  const lines = j.totalOnly ? '' : q.lines.map(l => `<div class="ln"><span><b>${esc(l[0])}</b><br><small>${esc(l[1])}</small></span><span class="num">${money(l[2])}</span></div>`).join('');
+  return `<section class="card"><h2>Customer</h2>
+      <label class="field"><span class="lbl">Name</span><input type="text" class="t" data-job="customer" value="${esc(j.customer)}"></label>
+      <label class="field"><span class="lbl">Address</span><input type="text" class="t" data-job="address" value="${esc(j.address)}"></label>
+      <label class="field"><span class="lbl">Phone</span><input type="text" class="t" inputmode="tel" data-job="phone" value="${esc(j.phone)}"></label>
+      <div class="chips"><button class="chip" data-act="totalOnly" aria-pressed="${!!j.totalOnly}">Show total only</button></div>
+    </section>
+    <div class="quote" id="quoteDoc">
+      <h3>${esc(s.biz || 'Painting quote')}</h3>
+      <small>${esc(s.bizPhone)}</small>
+      <div><b>${esc(j.customer || 'Customer name')}</b><br><small>${esc(j.address)} &middot; ${new Date().toLocaleDateString('en-US')}</small></div>
+      ${lines}
+      <div class="tl"><span>Total</span><span class="num">${money(q.total)}</span></div>
+      <small>${esc(s.terms)}</small>
+    </div>
+    <button class="btn pri" data-act="copy">Copy quote text</button>
+    ${copyMsg ? `<p class="note">${esc(copyMsg)}</p>` : ''}
+    ${fallbackText ? `<textarea id="fb" readonly rows="8">${esc(fallbackText)}</textarea>` : ''}
+    <p class="note">Your cost and margin never appear here. Paste the text into a message, or screenshot the quote above.</p>
+    <button class="btn danger ${armed === 'job' ? 'armed' : ''}" data-act="delJob">${armed === 'job' ? 'Tap again to delete this job' : 'Delete job'}</button>`;
+}
+
+function jobView(){
+  return `<div class="tabs" role="tablist"><button role="tab" data-act="tab" data-t="rooms" aria-selected="${tab === 'rooms'}">Rooms</button><button role="tab" data-act="tab" data-t="quote" aria-selected="${tab === 'quote'}">Quote</button></div>
+    ${tab === 'rooms' ? roomsTab() : quoteTab()}`;
+}
+
+function settingsView(){
+  const s = S.settings;
+  return `<section class="card"><h2>Margin</h2>
+      <div class="row">${setField('Target margin', 'target', '%')}${setField('Warn below', 'floor', '%')}</div>
+      <p class="note">Price = cost &divide; (1 &minus; target). At 50%, price is twice your cost.</p></section>
+    <section class="card"><h2>Sub price, labor and materials</h2>
+      <div class="row">${setField('Walls', 'wall', '$ / sq ft')}${setField('Ceiling', 'ceil', '$ / sq ft')}${setField('Trim', 'trim', '$ / ft')}</div>
+      <div class="row">${setField('Door size', 'doorSq', 'sq ft')}${setField('Window size', 'winSq', 'sq ft')}${setField('Door width', 'doorW', 'ft')}</div>
+      <p class="note">These are placeholders set so a 20 x 21 ft room costs about $600. Replace them with your sub's real rates.</p></section>
+    <section class="card"><h2>Room size scale</h2><p class="note">Multiplies the sub price by room floor area. Values blend smoothly between points, so a slightly bigger room never costs less. Smaller rooms cost more per square foot.</p>
+      <div class="row">${setField('Floor area', 's1', 'sq ft')}${setField('Multiplier', 'm1')}</div>
+      <div class="row">${setField('Floor area', 's2', 'sq ft')}${setField('Multiplier', 'm2')}</div>
+      <div class="row">${setField('Floor area', 's3', 'sq ft')}${setField('Multiplier', 'm3')}</div>
+      <div class="row">${setField('Floor area', 's4', 'sq ft')}${setField('Multiplier', 'm4')}</div></section>
+    <section class="card"><h2>Complexity add-ons</h2><p class="note">Percentages are added together, then applied to the sub price. Very tall replaces tall. Height uses the peak for vaulted rooms.</p>
+      <div class="row">${setField('Tall ceiling over', 'hiCeilH', 'ft')}${setField('Tall ceiling', 'cHi', '%')}</div>
+      <div class="row">${setField('Very tall over', 'hiCeil2H', 'ft')}${setField('Very tall', 'cHi2', '%')}${setField('Vaulted', 'cVault', '%')}</div>
+      <div class="row">${setField('Heavy prep', 'cPrep', '%')}${setField('Dark to light', 'cColor', '%')}${setField('Furnished', 'cFurn', '%')}</div></section>
+    <section class="card"><h2>Job size scale</h2><p class="note">Based on total wall and ceiling area across all rooms. Small means a closet or bath on its own.</p>
+      <div class="row">${setField('Small if under', 'jobSmallMax', 'sq ft')}${setField('Small multiplier', 'jobSmallM')}</div>
+      <div class="row">${setField('Mid if under', 'jobMidMax', 'sq ft')}${setField('Mid multiplier', 'jobMidM')}</div>
+      <div class="row">${setField('Large multiplier', 'jobLargeM')}${setField('Minimum job', 'minJob', '$')}</div>
+      <div class="row">${setField('Overhead per job', 'overhead', '$ cost')}${setField('Round prices to', 'round', '$')}</div></section>
+    <section class="card"><h2>Your business on the quote</h2>
+      <label class="field"><span class="lbl">Business name</span><input type="text" class="t" data-set="biz" data-str="1" value="${esc(s.biz)}"></label>
+      <label class="field"><span class="lbl">Phone</span><input type="text" class="t" inputmode="tel" data-set="bizPhone" data-str="1" value="${esc(s.bizPhone)}"></label>
+      <label class="field"><span class="lbl">Terms</span><textarea data-set="terms" data-str="1" rows="4">${esc(s.terms)}</textarea></label></section>
+    <button class="btn danger ${armed === 'reset' ? 'armed' : ''}" data-act="reset">${armed === 'reset' ? 'Tap again to reset all rates' : 'Reset rates to defaults'}</button>`;
+}
+
+function render(){
+  $('#top').innerHTML = topView();
+  $('#app').innerHTML = view === 'jobs' ? jobsView() : view === 'settings' ? settingsView() : jobView();
+  refresh();
+}
+
+function setOut(key, text){ document.querySelectorAll(`[data-out="${key}"]`).forEach(el => { el.textContent = text; }); }
+function refresh(){
+  const bar = $('#bar');
+  if (view !== 'job' || !job()) { bar.hidden = true; return; }
+  const j = job(), c = calc(j, S.settings), st = status(c.margin);
+  c.rooms.forEach((x, i) => {
+    const r = j.rooms[i], id = x.id;
+    const dimText = r.shape === 'custom' ? `${r.perim || '?'} ft of wall · ${r.area || '?'} sq ft` : `${r.l || '?'} × ${r.w || '?'} ft`;
+    setOut('room-dims:' + id, `${dimText} · ${r.vault ? (r.h || '?') + '–' + (r.peak || '?') + ' ft vaulted' : (r.h || '?') + ' ft ceiling'} · ${scopeText(r)}`);
+    setOut('room-price:' + id, money(x.price));
+    setOut('room-wall:' + id, Math.round(x.wallArea) + ' sq ft');
+    setOut('room-ceil:' + id, Math.round(x.ceilArea) + ' sq ft');
+    setOut('room-trim:' + id, Math.round(x.trimLF) + ' ft');
+    setOut('room-s:' + id, '×' + x.S.toFixed(2));
+    setOut('room-c:' + id, '+' + x.C + '%');
+    setOut('room-cost:' + id, money(x.cost));
+    document.querySelectorAll(`[data-out="room-hi:${id}"]`).forEach(el => el.classList.toggle('on', x.hiCeil));
+  });
+  setOut('sum-price', money(c.price));
+  setOut('sum-cost', money(c.cost));
+  setOut('sum-margin', pct(c.margin));
+  setOut('sum-paint', Math.round(c.paintSq).toLocaleString('en-US') + ' sq ft');
+  let note = `Job size multiplier ×${c.J.toFixed(2)}.`;
+  if (c.minApplied) note += ` Minimum job price of ${money(S.settings.minJob)} applied.`;
+  if (c.overridden) note += ` Override in use; calculated price was ${money(c.engine)}.`;
+  setOut('sum-note', note);
+  bar.hidden = false;
+  bar.innerHTML = `<div class="in"><div><div class="tot num">${money(c.price)}</div></div>
+    <div class="meta"><span>Cost ${money(c.cost)}</span><span>Profit ${money(c.price - c.cost)}</span></div>
+    <span class="pill ${st}">${pct(c.margin)} margin</span></div>`;
+}
+
+document.addEventListener('input', e => {
+  const t = e.target, d = t.dataset;
+  if (d.room) { room(d.room)[d.f] = t.value; if (d.f === 'name') { /* header text updates via refresh */ } }
+  else if (d.extra) { job().extras.find(x => x.id === d.extra)[d.f] = t.value; }
+  else if (d.job) { job()[d.job] = t.value; if (d.job === 'customer') document.querySelector('#top h1').textContent = t.value || 'New job'; }
+  else if (d.set) { S.settings[d.set] = d.str ? t.value : num(t.value); }
+  else return;
+  save();
+  if (view === 'job' && tab === 'quote' && (d.job || d.extra)) { /* quote preview refreshes on tab switch */ }
+  refresh();
+  if (d.room && d.f === 'name') document.querySelectorAll(`[data-act="toggleRoom"][data-id="${d.room}"] .nm`).forEach(el => el.textContent = t.value || 'Room');
+});
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  const a = b.dataset.act, id = b.dataset.id;
+  const disarm = () => { armed = null; };
+  if (a === 'open') { S.currentId = id; view = 'job'; tab = 'rooms'; openRoom = null; copyMsg = ''; fallbackText = ''; }
+  else if (a === 'newJob') { const j = newJob({rooms:[newRoom({name:'Room 1'})]}); S.jobs.unshift(j); S.currentId = j.id; view = 'job'; tab = 'rooms'; openRoom = j.rooms[0].id; }
+  else if (a === 'back') { view = view === 'settings' && S.currentId && job() && prevView === 'job' ? 'job' : 'jobs'; }
+  else if (a === 'settings') { prevView = view; view = 'settings'; }
+  else if (a === 'tab') { tab = b.dataset.t; copyMsg = ''; fallbackText = ''; }
+  else if (a === 'toggleRoom') { openRoom = openRoom === id ? null : id; }
+  else if (a === 'addRoom') { const r = newRoom({name:'Room ' + (job().rooms.length + 1)}); job().rooms.push(r); openRoom = r.id; }
+  else if (a === 'shape') { room(id).shape = b.dataset.v; }
+  else if (a === 'flag') { const r = room(id); r[b.dataset.f] = !r[b.dataset.f]; }
+  else if (a === 'dupRoom') { const r = Object.assign({}, room(id), {id:uid(), name:(room(id).name || 'Room') + ' copy'}); job().rooms.push(r); openRoom = r.id; }
+  else if (a === 'delRoom') { if (armed === 'r' + id) { job().rooms = job().rooms.filter(r => r.id !== id); openRoom = null; disarm(); } else { armed = 'r' + id; save(); render(); return; } }
+  else if (a === 'addExtra') { job().extras.push({id:uid(), label:'', cost:''}); }
+  else if (a === 'delExtra') { job().extras = job().extras.filter(x => x.id !== id); }
+  else if (a === 'totalOnly') { job().totalOnly = !job().totalOnly; }
+  else if (a === 'delJob') { if (armed === 'job') { S.jobs = S.jobs.filter(j => j.id !== S.currentId); S.currentId = null; view = 'jobs'; disarm(); } else { armed = 'job'; render(); return; } }
+  else if (a === 'reset') { if (armed === 'reset') { const keep = {biz:S.settings.biz, bizPhone:S.settings.bizPhone, terms:S.settings.terms}; S.settings = Object.assign({}, DEFAULTS, keep); disarm(); } else { armed = 'reset'; render(); return; } }
+  else if (a === 'copy') {
+    const text = quoteText();
+    const ok = () => { copyMsg = 'Quote text copied.'; fallbackText = ''; render(); };
+    const bad = () => { copyMsg = 'Copy was blocked here. Select the text below and copy it.'; fallbackText = text; render(); const f = $('#fb'); if (f) { f.focus(); f.select(); } };
+    try { navigator.clipboard.writeText(text).then(ok, bad); } catch (err) { bad(); }
+    return;
+  }
+  if (a !== 'delRoom' && a !== 'delJob' && a !== 'reset') disarm();
+  save(); render();
+  if (a === 'open' || a === 'back' || a === 'settings' || a === 'newJob') window.scrollTo(0, 0);
+});
+let prevView = 'jobs';
+render();
+</script>
+</body>
+</html>
